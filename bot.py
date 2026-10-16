@@ -103,7 +103,7 @@ class Bot(Client):
         print(f"[CDS BOT READY] Waiting for /start requests from web users...", flush=True)
         print(f"{'#'*60}\n", flush=True)
         
-        #web-response
+        # web-response: Bind primary PORT (default 8080)
         try:
             app = web.AppRunner(await web_server())
             await app.setup()
@@ -111,6 +111,15 @@ class Bot(Client):
             await web.TCPSite(app, bind_address, PORT).start()
             self.web_runner = app
             print(f"[CDS BOT INIT] Web response server active on port {PORT}", flush=True)
+
+            # Cloud resilience: If PORT is configured to a non-standard port (e.g. 8085),
+            # also bind 8080 so default Koyeb/Render TCP/HTTP health checks pass immediately
+            if PORT != 8080:
+                try:
+                    await web.TCPSite(app, bind_address, 8080).start()
+                    print(f"[CDS BOT INIT] Auxiliary health check server active on port 8080", flush=True)
+                except Exception as e_aux:
+                    print(f"[CDS BOT INIT] Auxiliary port 8080 notice: {e_aux}", flush=True)
         except Exception as e_web:
             print(f"[CDS BOT INIT] Web response server notice: {e_web}", flush=True)
 

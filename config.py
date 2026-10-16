@@ -55,7 +55,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_SERVIC
 # Delivery Protection
 PROTECT_CONTENT = os.environ.get("PROTECT_CONTENT", "True").lower() == "true"
 
-PORT = int(os.environ.get("PORT", "8085"))
+PORT = int(os.environ.get("PORT", "8080"))
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
 
 START_PIC = os.environ.get("START_PIC", "")

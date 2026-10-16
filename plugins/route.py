@@ -47,6 +47,10 @@ async def options_handler(request):
 async def root_route_handler(request):
     return web.json_response("CodeXBotz", headers=CORS_HEADERS)
 
+@routes.get("/health", allow_head=True)
+async def health_route_handler(request):
+    return web.json_response({"status": "ok", "service": "FileSharingBot"}, headers=CORS_HEADERS)
+
 @routes.get("/auth/status")
 async def auth_status_handler(request):
     session_id = request.query.get("session")

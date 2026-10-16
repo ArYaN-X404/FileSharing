@@ -8,7 +8,7 @@ FROM python:3.11-slim
 # Prevent Python from writing .pyc files and enable unbuffered streaming stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8085
+    PORT=8080
 
 WORKDIR /app
 
@@ -31,12 +31,12 @@ COPY . .
 # Create persistent storage directories with proper permissions
 RUN mkdir -p /app/downloads /app/data
 
-# Expose internal web server health port
-EXPOSE 8085
+# Expose standard cloud web ports (8080 for Koyeb/CloudRun/Render, 8085 fallback)
+EXPOSE 8080 8085
 
 # Built-in Docker Healthcheck against the integrated aiohttp server
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8085}/ || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/ || exit 1
 
 # Launch the Bot service
 CMD ["python", "main.py"]

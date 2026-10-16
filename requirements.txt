@@ -1,10 +1,17 @@
-# --- For-Bot-Working --------- #
-pyrogram
-TgCrypto
+# --- Core Telegram Bot Engine ---
+pyrogram>=2.0.106
+TgCrypto>=1.2.5
 pyromod==1.5
-python-dotenv
-# --- For-Database ------------ #
-pymongo
-dnspython
-# --- For-Web-Response ------- #
-aiohttp
+python-dotenv>=1.0.0
+cachetools>=5.3.0
+
+# --- Media & Image Processing ---
+Pillow>=10.0.0
+
+# --- Database & Storage ---
+aiosqlite>=0.19.0
+psycopg2-binary>=2.9.9
+
+# --- Networking & HTTP Services ---
+aiohttp>=3.9.0
+requests>=2.31.0

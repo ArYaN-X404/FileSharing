@@ -50,7 +50,7 @@ async def get_messages(client, message_ids):
                 message_ids=temb_ids
             )
         except FloodWait as e:
-            await asyncio.sleep(e.x)
+            await asyncio.sleep(getattr(e, 'value', getattr(e, 'x', 5)))
             msgs = await client.get_messages(
                 chat_id=client.db_channel.id,
                 message_ids=temb_ids
@@ -70,7 +70,7 @@ async def get_message_id(client, message):
     elif message.forward_sender_name:
         return 0
     elif message.text:
-        pattern = "https://t.me/(?:c/)?(.*)/(\d+)"
+        pattern = r"https://t.me/(?:c/)?(.*)/(\d+)"
         matches = re.match(pattern,message.text)
         if not matches:
             return 0

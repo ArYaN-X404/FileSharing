@@ -1,5 +1,3 @@
-#(©)CodeXBotz
-
 import os
 import logging
 from dotenv import load_dotenv
@@ -7,66 +5,71 @@ from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
-#Bot token @Botfather
+# Telegram Bot Credentials
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
-
-#Your API ID from my.telegram.org
-APP_ID = int(os.environ.get("APP_ID", ""))
-
-#Your API Hash from my.telegram.org
+APP_ID = int(os.environ.get("APP_ID", "0"))
 API_HASH = os.environ.get("API_HASH", "")
 
-#Your db channel Id
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", ""))
+# Private Video Storage Channel/Group ID
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "0"))
 
-#OWNER ID
-OWNER_ID = int(os.environ.get("OWNER_ID", ""))
+# Force Subscription Channel (Optional)
+FORCE_SUB_CHANNEL = os.environ.get("FORCE_SUB_CHANNEL", None)
+if FORCE_SUB_CHANNEL:
+    try:
+        FORCE_SUB_CHANNEL = int(FORCE_SUB_CHANNEL)
+    except ValueError:
+        pass
 
-#Port
-PORT = os.environ.get("PORT", "8080")
+# Auto Delete settings
+AUTO_DELETE_TIME = int(os.environ.get("AUTO_DELETE_TIME", "0"))
+AUTO_DEL_SUCCESS_MSG = os.environ.get("AUTO_DEL_SUCCESS_MSG", "File will be deleted soon")
+DISABLE_CHANNEL_BUTTON = os.environ.get("DISABLE_CHANNEL_BUTTON", "False").lower() == "true"
+BOT_STATS_TEXT = os.environ.get("BOT_STATS_TEXT", "<b>BOT UPTIME</b>\n{uptime}")
+USER_REPLY_TEXT = os.environ.get("USER_REPLY_TEXT", "Don't send me messages directly!")
 
-#Database 
-DB_URI = os.environ.get("DATABASE_URL", "")
-DB_NAME = os.environ.get("DATABASE_NAME", "filesharexbot")
+# Owner & Admins
+OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
+ADMINS = [OWNER_ID] if OWNER_ID else []
+try:
+    extra_admins = os.environ.get("ADMINS", "")
+    if extra_admins:
+        for x in extra_admins.split():
+            ADMINS.append(int(x))
+except ValueError:
+    pass
 
-#force sub channel id, if you want enable force sub
-FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "0"))
-JOIN_REQUEST_ENABLE = os.environ.get("JOIN_REQUEST_ENABLED", None)
+ADMINS = list(set([x for x in ADMINS if x != 0]))
 
+# Security: HMAC Secret for Token Signing
+HMAC_TOKEN_SECRET = os.environ.get("HMAC_TOKEN_SECRET", "cds_super_secret_hmac_key_2026")
+
+# Database (PostgreSQL or SQLite)
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///cds.db")
+
+# Supabase Cloud Integration
+USE_SUPABASE = os.environ.get("USE_SUPABASE", "false").lower() == "true"
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
+# Delivery Protection
+PROTECT_CONTENT = os.environ.get("PROTECT_CONTENT", "True").lower() == "true"
+
+PORT = int(os.environ.get("PORT", "8085"))
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
 
-#start message
-START_PIC = os.environ.get("START_PIC","")
-START_MSG = os.environ.get("START_MESSAGE", "Hello {first}\n\nI can store private files in Specified Channel and other users can access it from special link.")
-try:
-    ADMINS=[]
-    for x in (os.environ.get("ADMINS", "").split()):
-        ADMINS.append(int(x))
-except ValueError:
-        raise Exception("Your Admins list does not contain valid integers.")
-
-#Force sub message 
-FORCE_MSG = os.environ.get("FORCE_SUB_MESSAGE", "Hello {first}\n\n<b>You need to join in my Channel/Group to use me\n\nKindly Please join Channel</b>")
-
-#set your Custom Caption here, Keep None for Disable Custom Caption
-CUSTOM_CAPTION = os.environ.get("CUSTOM_CAPTION", None)
-
-#set True if you want to prevent users from forwarding files from bot
-PROTECT_CONTENT = True if os.environ.get('PROTECT_CONTENT', "False") == "True" else False
-
-# Auto delete time in seconds.
-AUTO_DELETE_TIME = int(os.getenv("AUTO_DELETE_TIME", "0"))
-AUTO_DELETE_MSG = os.environ.get("AUTO_DELETE_MSG", "This file will be automatically deleted in {time} seconds. Please ensure you have saved any necessary content before this time.")
-AUTO_DEL_SUCCESS_MSG = os.environ.get("AUTO_DEL_SUCCESS_MSG", "Your file has been successfully deleted. Thank you for using our service. ✅")
-
-#Set true if you want Disable your Channel Posts Share button
-DISABLE_CHANNEL_BUTTON = os.environ.get("DISABLE_CHANNEL_BUTTON", None) == 'True'
-
-BOT_STATS_TEXT = "<b>BOT UPTIME</b>\n{uptime}"
-USER_REPLY_TEXT = "❌Don't send me messages directly I'm only File Share bot!"
-
-ADMINS.append(OWNER_ID)
-ADMINS.append(1250450587)
+START_PIC = os.environ.get("START_PIC", "")
+START_MSG = os.environ.get(
+    "START_MESSAGE",
+    (
+        "<b>Welcome {first},</b>\n\n"
+        "<blockquote>"
+        "<b>EduVault Delivery Engine</b>\n"
+        "Your secure gateway to high-performance video streaming."
+        "</blockquote>\n\n"
+        "To access your lectures, select a topic from the dashboard."
+    )
+)
 
 LOG_FILE_NAME = "filesharingbot.txt"
 

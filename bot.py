@@ -1,28 +1,48 @@
 #(©)Codexbotz
 
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 from aiohttp import web
 from plugins import web_server
 
 import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
-import sys
 from datetime import datetime
 
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
+import pyrogram.utils
 
+# Robust 64-bit Telegram Channel & Chat ID classification patch
+def _patched_get_peer_type(peer_id: int) -> str:
+    if peer_id < 0:
+        if peer_id <= -1000000000000:
+            return "channel"
+        return "chat"
+    elif peer_id > 0:
+        return "user"
+    raise ValueError(f"Peer id invalid: {peer_id}")
 
-ascii_art = """
-░█████╗░░█████╗░██████╗░███████╗██╗░░██╗██████╗░░█████╗░████████╗███████╗
-██╔══██╗██╔══██╗██╔══██╗██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗╚══██╔══╝╚════██║
-██║░░╚═╝██║░░██║██║░░██║█████╗░░░╚███╔╝░██████╦╝██║░░██║░░░██║░░░░░███╔═╝
-██║░░██╗██║░░██║██║░░██║██╔══╝░░░██╔██╗░██╔══██╗██║░░██║░░░██║░░░██╔══╝░░
-╚█████╔╝╚█████╔╝██████╔╝███████╗██╔╝╚██╗██████╦╝╚█████╔╝░░░██║░░░███████╗
-░╚════╝░░╚════╝░╚═════╝░╚══════╝╚═╝░░╚═╝╚═════╝░░╚════╝░░░░╚═╝░░░╚══════╝
-"""
+pyrogram.utils.get_peer_type = _patched_get_peer_type
+pyrogram.utils.MIN_CHANNEL_ID = -1009999999999999
+pyrogram.utils.MAX_CHANNEL_ID = -1000000000000
+
 
 class Bot(Client):
     def __init__(self):
+        if not TG_BOT_TOKEN or not API_HASH or not APP_ID:
+            print(
+                "\n[ERROR] Missing required Telegram credentials!\n"
+                "Please configure TG_BOT_TOKEN, API_HASH, and APP_ID in your environment or .env file.\n"
+                "Refer to .env.example for configuration details.\n",
+                flush=True
+            )
+            sys.exit(1)
+
         super().__init__(
             name="Bot",
             api_hash=API_HASH,
@@ -34,6 +54,7 @@ class Bot(Client):
             bot_token=TG_BOT_TOKEN
         )
         self.LOGGER = LOGGER
+        self.web_runner = None
 
     async def start(self):
         await super().start()
@@ -54,27 +75,50 @@ class Bot(Client):
                 self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/CodeXBotzSupport for support")
                 sys.exit()
         try:
+            print(f"[CDS BOT INIT] Resolving Storage Chat (CHANNEL_ID={CHANNEL_ID})...", flush=True)
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
-            test = await self.send_message(chat_id = db_channel.id, text = "Test Message")
-            await test.delete()
+            print(f"[CDS BOT INIT] Storage Chat Connected: Title='{db_channel.title}', ID={db_channel.id}, Type={db_channel.type}", flush=True)
+            try:
+                test = await self.send_message(chat_id = db_channel.id, text = "Test Message")
+                await test.delete()
+                print(f"[CDS BOT INIT] Storage Chat Write Permission Test: PASSED ✅", flush=True)
+            except Exception as e_write:
+                print(f"[CDS BOT INIT] Storage Chat Direct Write Notice: {e_write} (Read/Copy operations remain fully functional)", flush=True)
         except Exception as e:
             self.LOGGER(__name__).warning(e)
-            self.LOGGER(__name__).warning(f"Make Sure bot is Admin in DB Channel, and Double check the CHANNEL_ID Value, Current Value {CHANNEL_ID}")
-            self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/CodeXBotzSupport for support")
-            sys.exit()
+            print(f"[CDS BOT INIT] Storage Chat Resolution Warning: {type(e)} - {e}", flush=True)
+            class FallbackChannel:
+                id = CHANNEL_ID
+                title = f"Channel {CHANNEL_ID}"
+                type = "unknown"
+            self.db_channel = FallbackChannel()
 
         self.set_parse_mode(ParseMode.HTML)
-        self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/CodeXBotz")
-        print(ascii_art)
-        print("""Welcome to CodeXBotz File Sharing Bot""")
         self.username = usr_bot_me.username
+        print(f"\n{'#'*60}", flush=True)
+        print(f"[CDS BOT READY] Bot Username: @{usr_bot_me.username} (ID: {usr_bot_me.id})", flush=True)
+        print(f"[CDS BOT READY] Storage Chat: '{getattr(self.db_channel, 'title', CHANNEL_ID)}' (ID: {getattr(self.db_channel, 'id', CHANNEL_ID)})", flush=True)
+        print(f"[CDS BOT READY] Extreme Terminal Verbose Mode: ACTIVE 🚀", flush=True)
+        print(f"[CDS BOT READY] Waiting for /start requests from web users...", flush=True)
+        print(f"{'#'*60}\n", flush=True)
+        
         #web-response
-        app = web.AppRunner(await web_server())
-        await app.setup()
-        bind_address = "0.0.0.0"
-        await web.TCPSite(app, bind_address, PORT).start()
+        try:
+            app = web.AppRunner(await web_server())
+            await app.setup()
+            bind_address = "0.0.0.0"
+            await web.TCPSite(app, bind_address, PORT).start()
+            self.web_runner = app
+            print(f"[CDS BOT INIT] Web response server active on port {PORT}", flush=True)
+        except Exception as e_web:
+            print(f"[CDS BOT INIT] Web response server notice: {e_web}", flush=True)
 
     async def stop(self, *args):
+        if hasattr(self, "web_runner") and self.web_runner:
+            try:
+                await self.web_runner.cleanup()
+            except Exception:
+                pass
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")

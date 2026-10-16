@@ -138,6 +138,20 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 .idea
-Bot.session
-filesharingbot.txt
-Bot.session-journal
+*.session
+*.session-journal
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+cds.db
+cds_assets.db
+archive/
+downloads/
+data/
+mapping_*.json
+filesharingbot.txt*
+*.log
+.env
+.env.*
+!.env.example

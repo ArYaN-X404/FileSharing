@@ -101,8 +101,8 @@ async def verify_code_handler(request):
     }, status=400, headers=CORS_HEADERS)
 
 # ── RAZORPAY STANDARD CHECKOUT BACKEND ENDPOINTS ──
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "rzp_live_TepwBPnZnxlBAE")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "CU2o1Pa5mjk3AbioW4482108")
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
 @routes.post("/api/create-order")
 async def create_order_handler(request):

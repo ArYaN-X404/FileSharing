@@ -59,7 +59,26 @@ async def auth_status_handler(request):
 
     session = AUTH_SESSIONS.get(session_id)
     if not session:
-        return web.json_response({"status": "not_found"}, headers=CORS_HEADERS)
+        # Check Supabase Cloud fallback
+        try:
+            from config import USE_SUPABASE, SUPABASE_URL, SUPABASE_KEY
+            if USE_SUPABASE and SUPABASE_URL and SUPABASE_KEY:
+                import json
+                sb_url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/token_events?token=eq.{session_id}&event_type=eq.auth_login&select=*&limit=1"
+                async with aiohttp.ClientSession() as s:
+                    async with s.get(sb_url, headers={"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}, timeout=3) as resp:
+                        if resp.status == 200:
+                            rows = await resp.json()
+                            if rows and len(rows) > 0:
+                                row = rows[0]
+                                metadata = json.loads(row["metadata"]) if isinstance(row["metadata"], str) else row["metadata"]
+                                return web.json_response({
+                                    "status": "confirmed",
+                                    "user": metadata
+                                }, headers=CORS_HEADERS)
+        except Exception:
+            pass
+        return web.json_response({"status": "pending"}, headers=CORS_HEADERS)
 
     # Check 10-minute expiry
     if int(time.time()) - session.get("created_at", 0) > 600:

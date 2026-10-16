@@ -113,6 +113,31 @@ async def start_command(client: Client, message: Message):
             confirm_auth_session(session_id, user_dict)
             print(f"[CDS BOT EVENT] ✅ Session {session_id} confirmed for user {user_id} ({user_name})", flush=True)
 
+            # Distributed Cloud Sync: Save confirmed session to Supabase token_events
+            try:
+                import json
+                import requests
+                from config import USE_SUPABASE, SUPABASE_URL, SUPABASE_KEY
+                if USE_SUPABASE and SUPABASE_URL and SUPABASE_KEY:
+                    sb_endpoint = f"{SUPABASE_URL.rstrip('/')}/rest/v1/token_events"
+                    sb_headers = {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": f"Bearer {SUPABASE_KEY}",
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    }
+                    sb_payload = {
+                        "token": session_id,
+                        "user_id": str(user_id),
+                        "username": message.from_user.username or "",
+                        "event_type": "auth_login",
+                        "metadata": json.dumps(user_dict)
+                    }
+                    resp = requests.post(sb_endpoint, headers=sb_headers, json=sb_payload, timeout=5)
+                    print(f"[CDS BOT EVENT] 🚀 Supabase Cloud Auth Event published for session: {session_id} (Status: {resp.status_code})", flush=True)
+            except Exception as e_sb:
+                print(f"[CDS BOT EVENT] Supabase Auth Event notice: {e_sb}", flush=True)
+
             await message.reply_text(
                 f"👋 <b>Welcome {message.from_user.first_name}!</b>\n\n"
                 f"✅ <b>EduVault Login Confirmed</b>\n"
